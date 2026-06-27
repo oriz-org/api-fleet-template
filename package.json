@@ -1,0 +1,51 @@
+{
+  "name": "@oriz/api-fleet-template",
+  "version": "0.1.0",
+  "description": "Astro Integration for oriz-org static APIs. Provides shared landing/docs/explorer pages, prebuild data mirroring, and theming.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./layouts/Layout.astro": "./src/layouts/Layout.astro",
+    "./pages/index.astro": "./src/pages/index.astro",
+    "./pages/docs.astro": "./src/pages/docs.astro",
+    "./pages/explorer.astro": "./src/pages/explorer.astro",
+    "./styles/global.css": "./src/styles/global.css",
+    "./prebuild": "./src/prebuild.cjs"
+  },
+  "files": [
+    "src",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "astro-component",
+    "oriz",
+    "static-api",
+    "withastro"
+  ],
+  "peerDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "astro": "^5.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oriz-org/api-fleet-template.git"
+  },
+  "homepage": "https://github.com/oriz-org/api-fleet-template#readme",
+  "bugs": {
+    "url": "https://github.com/oriz-org/api-fleet-template/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1"
+  }
+}

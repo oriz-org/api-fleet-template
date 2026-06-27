@@ -1,0 +1,136 @@
+---
+import '../styles/global.css';
+import fleetConfig from 'virtual:oriz-fleet-config';
+
+interface Props {
+  title?: string;
+  description?: string;
+  path?: string;
+}
+
+const {
+  title = fleetConfig.apiTitle,
+  description = fleetConfig.apiDescription,
+  path = '/',
+} = Astro.props;
+
+// Tailwind v4 palettes (curated set; covers the named colors we care about).
+// If themeColor matches a key here, we emit those as --color-primary-*.
+// Otherwise we treat themeColor as a hex base and synthesize a 50-950 scale
+// via mix-with-white / mix-with-black at standard tints.
+const PALETTES: Record<string, string[]> = {
+  slate:   ['#f8fafc','#f1f5f9','#e2e8f0','#cbd5e1','#94a3b8','#64748b','#475569','#334155','#1e293b','#0f172a','#020617'],
+  gray:    ['#f9fafb','#f3f4f6','#e5e7eb','#d1d5db','#9ca3af','#6b7280','#4b5563','#374151','#1f2937','#111827','#030712'],
+  zinc:    ['#fafafa','#f4f4f5','#e4e4e7','#d4d4d8','#a1a1aa','#71717a','#52525b','#3f3f46','#27272a','#18181b','#09090b'],
+  red:     ['#fef2f2','#fee2e2','#fecaca','#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#7f1d1d','#450a0a'],
+  orange:  ['#fff7ed','#ffedd5','#fed7aa','#fdba74','#fb923c','#f97316','#ea580c','#c2410c','#9a3412','#7c2d12','#431407'],
+  amber:   ['#fffbeb','#fef3c7','#fde68a','#fcd34d','#fbbf24','#f59e0b','#d97706','#b45309','#92400e','#78350f','#451a03'],
+  yellow:  ['#fefce8','#fef9c3','#fef08a','#fde047','#facc15','#eab308','#ca8a04','#a16207','#854d0e','#713f12','#422006'],
+  lime:    ['#f7fee7','#ecfccb','#d9f99d','#bef264','#a3e635','#84cc16','#65a30d','#4d7c0f','#3f6212','#365314','#1a2e05'],
+  green:   ['#f0fdf4','#dcfce7','#bbf7d0','#86efac','#4ade80','#22c55e','#16a34a','#15803d','#166534','#14532d','#052e16'],
+  emerald: ['#ecfdf5','#d1fae5','#a7f3d0','#6ee7b7','#34d399','#10b981','#059669','#047857','#065f46','#064e3b','#022c22'],
+  teal:    ['#f0fdfa','#ccfbf1','#99f6e4','#5eead4','#2dd4bf','#14b8a6','#0d9488','#0f766e','#115e59','#134e4a','#042f2e'],
+  cyan:    ['#ecfeff','#cffafe','#a5f3fc','#67e8f9','#22d3ee','#06b6d4','#0891b2','#0e7490','#155e75','#164e63','#083344'],
+  sky:     ['#f0f9ff','#e0f2fe','#bae6fd','#7dd3fc','#38bdf8','#0ea5e9','#0284c7','#0369a1','#075985','#0c4a6e','#082f49'],
+  blue:    ['#eff6ff','#dbeafe','#bfdbfe','#93c5fd','#60a5fa','#3b82f6','#2563eb','#1d4ed8','#1e40af','#1e3a8a','#172554'],
+  indigo:  ['#eef2ff','#e0e7ff','#c7d2fe','#a5b4fc','#818cf8','#6366f1','#4f46e5','#4338ca','#3730a3','#312e81','#1e1b4b'],
+  violet:  ['#f5f3ff','#ede9fe','#ddd6fe','#c4b5fd','#a78bfa','#8b5cf6','#7c3aed','#6d28d9','#5b21b6','#4c1d95','#2e1065'],
+  purple:  ['#faf5ff','#f3e8ff','#e9d5ff','#d8b4fe','#c084fc','#a855f7','#9333ea','#7e22ce','#6b21a8','#581c87','#3b0764'],
+  fuchsia: ['#fdf4ff','#fae8ff','#f5d0fe','#f0abfc','#e879f9','#d946ef','#c026d3','#a21caf','#86198f','#701a75','#4a044e'],
+  pink:    ['#fdf2f8','#fce7f3','#fbcfe8','#f9a8d4','#f472b6','#ec4899','#db2777','#be185d','#9d174d','#831843','#500724'],
+  rose:    ['#fff1f2','#ffe4e6','#fecdd3','#fda4af','#fb7185','#f43f5e','#e11d48','#be123c','#9f1239','#881337','#4c0519'],
+};
+
+const STEPS = [50,100,200,300,400,500,600,700,800,900,950];
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#','');
+  const full = h.length === 3 ? h.split('').map((c) => c+c).join('') : h;
+  const n = parseInt(full, 16);
+  return [(n>>16)&255, (n>>8)&255, n&255];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  const to = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2,'0');
+  return `#${to(r)}${to(g)}${to(b)}`;
+}
+function mix(a: [number,number,number], b: [number,number,number], t: number): [number,number,number] {
+  return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+}
+function synthScale(baseHex: string): string[] {
+  const base = hexToRgb(baseHex);
+  const white: [number,number,number] = [255,255,255];
+  const black: [number,number,number] = [0,0,0];
+  // Tints for steps 50..500 (mix base with white), shades for 600..950 (mix with black).
+  const tints = [0.95, 0.85, 0.72, 0.55, 0.35, 0.0];
+  const shades = [0.15, 0.30, 0.45, 0.60, 0.75];
+  const out: string[] = [];
+  for (let i = 0; i < 6; i++) out.push(rgbToHex(...mix(base, white, tints[i])));
+  for (let i = 0; i < 5; i++) out.push(rgbToHex(...mix(base, black, shades[i])));
+  return out;
+}
+
+const theme = fleetConfig.themeColor || 'emerald';
+const scale = PALETTES[theme] ?? synthScale(theme.startsWith('#') ? theme : '#10b981');
+const themeStyle = STEPS.map((s, i) => `--color-primary-${s}:${scale[i]};`).join('');
+
+const nav = [
+  { href: '/', label: 'Home' },
+  { href: '/docs', label: 'Docs' },
+  { href: '/explorer', label: 'Explorer' },
+  { href: `https://github.com/${fleetConfig.githubRepo}`, label: 'GitHub', external: true },
+];
+
+const themeColorMeta = scale[8]; // ~800
+---
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content={themeColorMeta} media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <style set:html={`:root{${themeStyle}}`}></style>
+  </head>
+  <body class="min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <header class="border-b border-zinc-200 dark:border-zinc-800">
+      <nav class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+        <a href="/" class="font-mono text-sm font-semibold tracking-tight">
+          <span style={`color:var(--color-primary-700)`}>{fleetConfig.apiName}</span>
+          <span class="text-zinc-400">.oriz.in</span>
+        </a>
+        <ul class="flex items-center gap-5 text-sm">
+          {nav.map((n) => (
+            <li>
+              <a
+                href={n.href}
+                class={`text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 ${path === n.href ? 'font-semibold text-zinc-900 dark:text-zinc-100' : ''}`}
+                target={n.external ? '_blank' : undefined}
+                rel={n.external ? 'noopener noreferrer' : undefined}
+              >{n.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="mt-16 border-t border-zinc-200 py-8 dark:border-zinc-800">
+      <div class="mx-auto flex max-w-5xl flex-col gap-3 px-6 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+        <div>{fleetConfig.stats}</div>
+        <div class="flex gap-4">
+          <a href={`https://github.com/${fleetConfig.githubRepo}`} class="hover:text-zinc-700 dark:hover:text-zinc-300" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://oriz.in" class="hover:text-zinc-700 dark:hover:text-zinc-300">oriz.in</a>
+          <a href="https://buymeacoffee.com/chirag127" class="hover:text-zinc-700 dark:hover:text-zinc-300" target="_blank" rel="noopener noreferrer">Buy me a coffee</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

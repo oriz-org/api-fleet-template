@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import fleetConfig from 'virtual:oriz-fleet-config';
+
+const {
+  apiName,
+  apiTitle,
+  apiDescription,
+  stats,
+  githubRepo,
+  sampleEndpoint,
+  sampleResponse,
+} = fleetConfig;
+
+const siteHost = `${apiName}.oriz.in`;
+const sampleCurl = `curl https://${siteHost}${sampleEndpoint}`;
+const sampleJson = JSON.stringify(sampleResponse, null, 2);
+const jsdelivrBase = `https://cdn.jsdelivr.net/gh/${githubRepo}@main`;
+---
+<Layout path="/">
+  <section class="mx-auto max-w-5xl px-6 pt-20 pb-12">
+    <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">
+      {apiTitle.replace(/\s*API\s*$/, '')}
+      <span style="color:var(--color-primary-700)">API</span>
+    </h1>
+    <p class="mt-5 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
+      {apiDescription}
+    </p>
+
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/docs" class="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors" style="background:var(--color-primary-800)">Read the docs</a>
+      <a href="/explorer" class="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors dark:border-zinc-700 dark:text-zinc-300">Try the explorer</a>
+      <a href={`https://github.com/${githubRepo}`} target="_blank" rel="noopener noreferrer" class="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors dark:border-zinc-700 dark:text-zinc-300">Source on GitHub</a>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-12">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">Try it</h2>
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+      <div>
+        <p class="mb-2 text-sm text-zinc-600 dark:text-zinc-400">Request:</p>
+        <pre class="overflow-x-auto rounded-md border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900"><code class="font-mono text-zinc-800 dark:text-zinc-200">{sampleCurl}</code></pre>
+      </div>
+      <div>
+        <p class="mb-2 text-sm text-zinc-600 dark:text-zinc-400">Response:</p>
+        <pre class="overflow-x-auto rounded-md border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900"><code class="font-mono text-zinc-800 dark:text-zinc-200">{sampleJson}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-12">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">How to use</h2>
+    <div class="mt-4 grid gap-6 md:grid-cols-2">
+      <div class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
+        <h3 class="font-mono text-sm font-semibold" style="color:var(--color-primary-700)">via {siteHost}</h3>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Cloudflare Pages, custom domain, free TLS. Recommended for browser apps.</p>
+        <pre class="mt-3 overflow-x-auto rounded bg-zinc-50 p-3 text-xs dark:bg-zinc-900"><code class="font-mono">https://{siteHost}{sampleEndpoint}</code></pre>
+      </div>
+      <div class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
+        <h3 class="font-mono text-sm font-semibold" style="color:var(--color-primary-700)">via jsDelivr</h3>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Pinned to a git ref. Recommended for production code that wants reproducibility.</p>
+        <pre class="mt-3 overflow-x-auto rounded bg-zinc-50 p-3 text-xs dark:bg-zinc-900"><code class="font-mono">{jsdelivrBase}{sampleEndpoint}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-12">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">Stats</h2>
+    <p class="mt-3 text-zinc-700 dark:text-zinc-300">{stats}</p>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-12">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">Why use this</h2>
+    <ul class="mt-4 space-y-2 text-zinc-700 dark:text-zinc-300">
+      <li class="flex gap-3"><span style="color:var(--color-primary-700)">&middot;</span> Static JSON &mdash; no API key, no rate limit, no quota.</li>
+      <li class="flex gap-3"><span style="color:var(--color-primary-700)">&middot;</span> Served from Cloudflare Pages and jsDelivr edge caches.</li>
+      <li class="flex gap-3"><span style="color:var(--color-primary-700)">&middot;</span> Open data &mdash; fork it, audit it, send a PR.</li>
+    </ul>
+    <div class="mt-8 flex flex-wrap gap-4 text-sm">
+      <a href="/docs" class="underline decoration-zinc-400 underline-offset-4">API reference &rarr;</a>
+      <a href={`https://github.com/${githubRepo}`} class="underline decoration-zinc-400 underline-offset-4" target="_blank" rel="noopener noreferrer">Contribute a fix &rarr;</a>
+    </div>
+  </section>
+</Layout>

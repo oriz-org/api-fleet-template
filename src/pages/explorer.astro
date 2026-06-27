@@ -1,0 +1,112 @@
+---
+import Layout from '../layouts/Layout.astro';
+import fleetConfig from 'virtual:oriz-fleet-config';
+
+const { apiTitle, dataDirs, indexFiles } = fleetConfig;
+
+// Explorer uses the first dataDir as the record-per-slug source, and the first
+// indexFile (must be a JSON array of slugs OR objects with .slug) for the picker.
+const primaryDir = (dataDirs && dataDirs[0]) || 'records';
+const primaryIndex = (indexFiles && indexFiles[0]) || 'index.json';
+---
+<Layout title={`Explorer - ${apiTitle}`} path="/explorer">
+  <section class="mx-auto max-w-5xl px-6 pt-16 pb-8">
+    <p class="font-mono text-xs uppercase tracking-wider" style="color:var(--color-primary-700)">Interactive</p>
+    <h1 class="mt-2 text-4xl font-bold tracking-tight">Live explorer</h1>
+    <p class="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">Pick a record &mdash; the response below is fetched live from this site's own JSON endpoints. No server, no API key.</p>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-8">
+    <form id="explorer-form" class="grid gap-4">
+      <label class="block">
+        <span class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Record</span>
+        <select
+          id="record-select"
+          class="mt-2 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm shadow-sm focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
+        >
+          <option value="">Loading&hellip;</option>
+        </select>
+      </label>
+    </form>
+
+    <div class="mt-8">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">Endpoint</span>
+        <a
+          id="endpoint-link"
+          href="#"
+          class="font-mono text-xs text-zinc-600 underline decoration-zinc-400 underline-offset-4 dark:text-zinc-400"
+          target="_blank"
+          rel="noopener noreferrer"
+        ></a>
+      </div>
+      <pre
+        id="result"
+        class="mt-3 min-h-[300px] overflow-x-auto rounded-md border border-zinc-200 bg-zinc-50 p-4 text-xs dark:border-zinc-800 dark:bg-zinc-900"
+      ><code id="result-code" class="font-mono text-zinc-800 dark:text-zinc-200">Pick a record above.</code></pre>
+    </div>
+  </section>
+
+  <script is:inline define:vars={{ primaryDir, primaryIndex }}>
+    (async function () {
+      const sel = document.getElementById('record-select');
+      const codeEl = document.getElementById('result-code');
+      const endpointLink = document.getElementById('endpoint-link');
+
+      function setResult(text, endpoint) {
+        codeEl.textContent = text;
+        if (endpoint) {
+          endpointLink.textContent = endpoint;
+          endpointLink.href = endpoint;
+        } else {
+          endpointLink.textContent = '';
+          endpointLink.removeAttribute('href');
+        }
+      }
+
+      function entrySlug(entry) {
+        if (typeof entry === 'string') return entry;
+        if (entry && typeof entry === 'object') return entry.slug || entry.id || entry.name || null;
+        return null;
+      }
+      function entryLabel(entry) {
+        if (typeof entry === 'string') return entry;
+        if (entry && typeof entry === 'object') return entry.name || entry.title || entry.label || entry.slug || entry.id || '(record)';
+        return '(record)';
+      }
+
+      try {
+        const res = await fetch('/' + primaryIndex);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const list = await res.json();
+        const items = Array.isArray(list) ? list : (Array.isArray(list.records) ? list.records : []);
+        const opts = items
+          .map((entry) => {
+            const slug = entrySlug(entry);
+            if (!slug) return null;
+            return '<option value="' + slug + '">' + entryLabel(entry) + '</option>';
+          })
+          .filter(Boolean)
+          .join('');
+        sel.innerHTML = '<option value="">Select a record&hellip;</option>' + opts;
+      } catch (err) {
+        sel.innerHTML = '<option value="">Failed to load</option>';
+        setResult('Failed to load /' + primaryIndex + ': ' + err.message);
+      }
+
+      sel.addEventListener('change', async (e) => {
+        const slug = e.target.value;
+        if (!slug) { setResult('Pick a record above.'); return; }
+        const endpoint = '/' + primaryDir + '/' + slug + '.json';
+        try {
+          const res = await fetch(endpoint);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          setResult(JSON.stringify(data, null, 2), endpoint);
+        } catch (err) {
+          setResult('Failed to load ' + endpoint + ': ' + err.message);
+        }
+      });
+    })();
+  </script>
+</Layout>
