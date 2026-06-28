@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import fleetConfig from 'virtual:oriz-fleet-config';
+import { head as injectedHead, bodyEnd as injectedBodyEnd, csp as injectedCsp } from 'virtual:oriz-fleet-injected-scripts';
 
 interface Props {
   title?: string;
@@ -87,6 +88,7 @@ const themeColorMeta = scale[8]; // ~800
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    {injectedCsp && <meta http-equiv="Content-Security-Policy" content={injectedCsp} />}
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -97,6 +99,7 @@ const themeColorMeta = scale[8]; // ~800
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <style set:html={`:root{${themeStyle}}`}></style>
+    {injectedHead && <Fragment set:html={injectedHead} />}
   </head>
   <body class="min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
     <header class="border-b border-zinc-200 dark:border-zinc-800">
@@ -132,5 +135,6 @@ const themeColorMeta = scale[8]; // ~800
         </div>
       </div>
     </footer>
+    {injectedBodyEnd && <Fragment set:html={injectedBodyEnd} />}
   </body>
 </html>

@@ -3,6 +3,10 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import {
+  getInjectedScripts,
+  getContentSecurityPolicy,
+} from '@oriz/web-script-injectors';
 
 const require = createRequire(import.meta.url);
 
@@ -49,6 +53,9 @@ export interface OrizFleetConfig {
 const VIRTUAL_ID = 'virtual:oriz-fleet-config';
 const RESOLVED_VIRTUAL_ID = '\0' + VIRTUAL_ID;
 
+const INJECTED_VIRTUAL_ID = 'virtual:oriz-fleet-injected-scripts';
+const RESOLVED_INJECTED_VIRTUAL_ID = '\0' + INJECTED_VIRTUAL_ID;
+
 /**
  * Astro Integration entry point. Drops in:
  *  - / (landing), /docs, /explorer pages
@@ -71,23 +78,44 @@ export default function orizFleet(userConfig: OrizFleetConfig): AstroIntegration
         injectRoute({ pattern: '/docs', entrypoint: pageEntry('docs.astro') });
         injectRoute({ pattern: '/explorer', entrypoint: pageEntry('explorer.astro') });
 
-        // 2. Add a virtual module so pages can `import config from 'virtual:oriz-fleet-config'`.
+        // 2. Capture env + render injected scripts/CSP at setup time so the
+        //    snapshot is stable for the whole build.
+        const envSnapshot: Record<string, string | undefined> = { ...process.env };
+        const injected = getInjectedScripts(envSnapshot);
+        const csp = getContentSecurityPolicy(envSnapshot);
+        const injectedJson = JSON.stringify({
+          head: String(injected.head),
+          bodyEnd: String(injected.bodyEnd),
+          csp,
+        });
+
+        // 3. Add virtual modules so pages / layouts can import config + scripts.
         const cfgJson = JSON.stringify(userConfig);
         const virtualModulePlugin = {
           name: 'oriz-fleet-config-virtual',
           resolveId(id: string) {
             if (id === VIRTUAL_ID) return RESOLVED_VIRTUAL_ID;
+            if (id === INJECTED_VIRTUAL_ID) return RESOLVED_INJECTED_VIRTUAL_ID;
             return null;
           },
           load(id: string) {
             if (id === RESOLVED_VIRTUAL_ID) {
               return `export default ${cfgJson};`;
             }
+            if (id === RESOLVED_INJECTED_VIRTUAL_ID) {
+              return (
+                `const data = ${injectedJson};\n` +
+                `export const head = data.head;\n` +
+                `export const bodyEnd = data.bodyEnd;\n` +
+                `export const csp = data.csp;\n` +
+                `export default data;\n`
+              );
+            }
             return null;
           },
         };
 
-        // 3. Wire Tailwind v4 if the consumer hasn't already.
+        // 4. Wire Tailwind v4 if the consumer hasn't already.
         let tailwindPlugin: unknown = null;
         try {
           // Peer dep; resolved against the consuming project's node_modules.
