@@ -1,6 +1,20 @@
 @import "tailwindcss";
 
 /*
+ * Tell Tailwind v4 to scan the package's own .astro/.ts files for class names.
+ * Tailwind ignores node_modules by default, so without this, all utility classes
+ * (.flex, .grid, .mx-auto, etc.) used in our pages are stripped from the
+ * generated CSS — leaving the consumer with only the theme tokens below.
+ *
+ * Path is relative to this CSS file's location at runtime.
+ * In the consumer's node_modules, this resolves to:
+ *   node_modules/@oriz/api-fleet-template/src/(pages|layouts|components)/**
+ */
+@source "../pages/**/*.{astro,ts,tsx}";
+@source "../layouts/**/*.{astro,ts,tsx}";
+@source "../components/**/*.{astro,ts,tsx}";
+
+/*
  * Theme tokens for oriz API fleet pages.
  *
  * The integration layer is responsible for setting --color-primary-* via a
